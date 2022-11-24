@@ -60,13 +60,16 @@ function swap(a, i, j) {
   return charArray; //.join("");
 }
 
+const reducer = (accumulator, currentValue) => accumulator + currentValue;
+
 let emptySlots = [8, 6, 8, 6, 8, 6, 8, 6];
 let people = [4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6];
 
 class Shift {
-  constructor(length) {
+  constructor(length, arr) {
     this.length = length;
-    this.arr = []; //Array(length).fill(1);
+    this.arr = arr;
+    this.emptySpace = length - arr.reduce(reducer);
   }
 }
 
@@ -83,11 +86,23 @@ class Planning {
       let len = lengthsList[i];
       let combinaisons = getCombinaisons(this.remainingPeople, len);
       let randomCombinaison = combinaisons[getRandomInt(combinaisons.length)];
-      console.log(`len : ${len}`);
+      //   console.log(
+      //     `\nremainingPeople : ${JSON.stringify(this.remainingPeople)}`
+      //   );
+      //   console.log(`len : ${len}`);
       //   console.log("combinaisons II", combinaisons);
-      console.log("randomCombinaison", randomCombinaison);
+      //   console.log("randomCombinaison", randomCombinaison);
+
+      let shift = new Shift(len, randomCombinaison);
+      randomCombinaison.forEach((combi) => {
+        let idx = this.remainingPeople.indexOf(combi);
+        this.remainingPeople.splice(idx, 1);
+      });
+      planning[i] = shift;
     }
+    this.planning = planning;
   }
 }
 
 let planning = new Planning(emptySlots, people);
+console.log(planning);
