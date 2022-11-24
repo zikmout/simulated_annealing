@@ -93,6 +93,7 @@ class Planning {
         randomCombinaison.forEach((combi) => {
           let idx = this.remainingPeople.indexOf(combi);
           this.usedSpace += this.remainingPeople[idx];
+
           this.remainingPeople.splice(idx, 1);
         });
         planning[i] = shift;
@@ -143,40 +144,43 @@ class Planning {
   //     this.planning[index2] = tmp
   //   };
 
-  randomGenerateShift = (index) => {
-    let oldShift = this.getShift(index).duplicate();
-    console.log("oldShift", oldShift);
-
-    let maxShiftLength = oldShift.length;
-    let oldRemainingPeople = [...this.planning.remainingPeople];
-
-    let arr = [...oldShift.arr].concat([...oldRemainingPeople]); // new temp remaining people before new Shift
-
-    let newRemainingPeople = [...arr];
-
-    let combinaisons = getCombinaisons(arr, maxShiftLength);
-    let randomCombinaison = combinaisons[getRandomInt(combinaisons.length)];
-    let newShift = new Shift(maxShiftLength, randomCombinaison);
-    console.log("newShift", newShift);
-
-    for (let i = 0; i < newShift.arr.length; i++) {
-      let idx = newRemainingPeople.findIndex(newShift.arr[i]);
-      newRemainingPeople.splice(idx, 1);
-    }
-    this.planning.remainingPeople = newRemainingPeople;
-    this.planning[i] = newShift;
-
-    this.planning.computeSpaces();
-    return newShift;
-  };
-
   computeSpaces = () => {
     let newEmptySpace = 0;
     for (let i = 0; i < this.planning.length; i++) {
       newEmptySpace += this.planning[i].emptySpace;
     }
     this.emptySpace = newEmptySpace;
-    this.usedSpace = this.people.reduce(reducer) - emptySpace;
+    this.usedSpace = this.people.reduce(reducer) - newEmptySpace;
+  };
+
+  randomGenerateShift = (index) => {
+    let oldShift = this.getShift(index).duplicate();
+    // console.log("oldShift", oldShift);
+
+    let maxShiftLength = oldShift.length;
+    let oldRemainingPeople = [...this.remainingPeople];
+    // console.log(`oldRemainingPeople : ${JSON.stringify(oldRemainingPeople)}`);
+
+    let arr = [...oldShift.arr].concat(oldRemainingPeople); // new temp remaining people before new Shift
+
+    // console.log(`arr : ${JSON.stringify(arr)}`);
+    let newRemainingPeople = [...arr];
+
+    let combinaisons = getCombinaisons(arr, maxShiftLength);
+    let randomCombinaison = combinaisons[getRandomInt(combinaisons.length)];
+    // console.log(`randomCombinaison : ${JSON.stringify(randomCombinaison)}`);
+    let newShift = new Shift(maxShiftLength, randomCombinaison);
+    // console.log("newShift", newShift);
+    // console.log(`newRemainingPeople : ${JSON.stringify(newRemainingPeople)}`);
+
+    for (let i = 0; i < newShift.arr.length; i++) {
+      let idx = newRemainingPeople.indexOf(newShift.arr[i]);
+      newRemainingPeople = newRemainingPeople.splice(idx, 1);
+    }
+
+    this.remainingPeople = newRemainingPeople;
+    this.planning[index] = newShift;
+    this.computeSpaces();
   };
 }
 
@@ -193,19 +197,46 @@ class simulatedAnnealing {
     let current = new Planning(emptySlots, people);
     let best = current.duplicate();
 
-    for (let t = this.temperature; t > 1; t = t * coolingFactor) {
+    for (let t = this.temperature; t > 1; t = t * this.coolingFactor) {
       let neighbor = current.duplicate();
       let nb = neighbor.noShifts();
       let index1 = getRandomInt(nb);
       //   let index2 = getRandomInt(nb);
       //   neighbor.swapShifts(index1, index2);
-      neighbor.planning[index1];
+      for (let x = 0; x < nb; x++) {
+        neighbor.randomGenerateShift(x);
+      }
+      //   neighbor.randomGenerateShift(index1);
+
+      let currentEmptySpace = current.emptySpace;
+      let neighborEmptySpace = neighbor.emptySpace;
+      let delatE = currentEmptySpace - neighborEmptySpace;
+      console.log("deltaE : ", delatE);
+
+      console.log(
+        `proba : ${getProbability(
+          currentEmptySpace,
+          neighborEmptySpace,
+          this.temperature
+        )}`
+      );
+      if (
+        Math.random(0.5) <
+        getProbability(currentEmptySpace, neighborEmptySpace, this.temperature)
+      ) {
+        current = neighbor.duplicate();
+      }
+
+      if (current.emptySpace < best.emptySpace) {
+        best = current.duplicate();
+      }
     }
+    console.log("\n\nBEST EmptySpace : ", best.emptySpace);
   };
 }
 
-let temperature = 1000;
-let coolingFactor = 0.995;
+let temperature = 100;
+let coolingFactor = 0.9;
 
 // let planning = new Planning(emptySlots, people);
 
