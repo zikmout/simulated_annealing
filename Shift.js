@@ -127,30 +127,87 @@ class Planning {
     newPlanning.usedSpace = this.usedSpace;
     return newPlanning;
   };
+
+  noShifts = () => {
+    return this.planning.length;
+  };
+
+  //   swapShifts = (index1, index2) => {
+  //     // Try custom ES6 Syntax
+  //     // [this.planning[index1], this.planning[index2]] = [
+  //     //   this.planning[index2],
+  //     //   this.planning[index1],
+  //     // ];
+  //     let tmp = this.getShift(index1).duplicate();
+  //     this.planning[index1] = this.getShift(index2).duplicate();
+  //     this.planning[index2] = tmp
+  //   };
+
+  randomGenerateShift = (index) => {
+    let oldShift = this.getShift(index).duplicate();
+    console.log("oldShift", oldShift);
+
+    let maxShiftLength = oldShift.length;
+    let oldRemainingPeople = [...this.planning.remainingPeople];
+
+    let arr = [...oldShift.arr].concat([...oldRemainingPeople]); // new temp remaining people before new Shift
+
+    let newRemainingPeople = [...arr];
+
+    let combinaisons = getCombinaisons(arr, maxShiftLength);
+    let randomCombinaison = combinaisons[getRandomInt(combinaisons.length)];
+    let newShift = new Shift(maxShiftLength, randomCombinaison);
+    console.log("newShift", newShift);
+
+    for (let i = 0; i < newShift.arr.length; i++) {
+      let idx = newRemainingPeople.findIndex(newShift.arr[i]);
+      newRemainingPeople.splice(idx, 1);
+    }
+    this.planning.remainingPeople = newRemainingPeople;
+    this.planning[i] = newShift;
+
+    this.planning.computeSpaces();
+    return newShift;
+  };
+
+  computeSpaces = () => {
+    let newEmptySpace = 0;
+    for (let i = 0; i < this.planning.length; i++) {
+      newEmptySpace += this.planning[i].emptySpace;
+    }
+    this.emptySpace = newEmptySpace;
+    this.usedSpace = this.people.reduce(reducer) - emptySpace;
+  };
 }
 
 class simulatedAnnealing {
-  constructor(planning, temperature, coolingFactor) {
-    this.planning = planning;
+  constructor(temperature, coolingFactor) {
     this.temperature = temperature;
     this.coolingFactor = coolingFactor;
   }
 
   solve = () => {
     console.log("Solving ....");
-    console.log(this.planning);
-    console.log("------------------------------------------");
-    console.log(this.planning.duplicate());
+    let emptySlots = [8, 6, 8, 6, 8, 6, 8, 6];
+    let people = [4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6];
+    let current = new Planning(emptySlots, people);
+    let best = current.duplicate();
+
+    for (let t = this.temperature; t > 1; t = t * coolingFactor) {
+      let neighbor = current.duplicate();
+      let nb = neighbor.noShifts();
+      let index1 = getRandomInt(nb);
+      //   let index2 = getRandomInt(nb);
+      //   neighbor.swapShifts(index1, index2);
+      neighbor.planning[index1];
+    }
   };
 }
 
-let emptySlots = [8, 6, 8, 6, 8, 6, 8, 6];
-let people = [4, 4, 4, 4, 4, 4, 4, 4, 6, 6, 6, 6];
 let temperature = 1000;
 let coolingFactor = 0.995;
 
-let planning = new Planning(emptySlots, people);
-// console.log(planning);
+// let planning = new Planning(emptySlots, people);
 
-let sa = new simulatedAnnealing(planning, temperature, coolingFactor);
+let sa = new simulatedAnnealing(temperature, coolingFactor);
 sa.solve();
